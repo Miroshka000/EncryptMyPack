@@ -188,7 +188,6 @@ public class EncryptMyPack {
         return key;
     }
 
-
     @SneakyThrows
     public static void decrypt(ZipFile inputZip, String outputName, String key) {
         Content content = decryptContentsJson(inputZip, "contents.json", key);
@@ -197,8 +196,8 @@ public class EncryptMyPack {
         Files.deleteIfExists(Path.of(outputName));
         var outputStream = new ZipOutputStream(new FileOutputStream(outputName));
         // Decrypt files
-        for (var contentEntry : content.content) {
-            var entryPath = contentEntry.path;
+        for (var contentEntry : content.content()) {
+            var entryPath = contentEntry.path();
             var zipEntry = inputZip.getEntry(entryPath);
             if (zipEntry == null) {
                 err("Zip entry not exists: " + entryPath);
@@ -206,14 +205,14 @@ public class EncryptMyPack {
             }
             outputStream.putNextEntry((ZipEntry) zipEntry.clone());
             var bytes = inputZip.getInputStream(zipEntry).readAllBytes();
-            if (contentEntry.key == null) {
+            if (contentEntry.key() == null) {
                 // manifest.json, pack_icon.png, bug_pack_icon.png etc...
                 // Just copy it to output folder
                 log("Copying file: " + entryPath);
                 outputStream.write(bytes);
             } else {
                 log("Decrypting file: " + entryPath);
-                decryptFile(outputStream, bytes, contentEntry.key);
+                decryptFile(outputStream, bytes, contentEntry.key());
             }
             outputStream.closeEntry();
         }
@@ -230,8 +229,8 @@ public class EncryptMyPack {
         log("Decrypting sub pack: " + subPackPath);
         Content content = decryptContentsJson(inputZip, subPackPath + "contents.json", key);
 
-        for (var contentEntry : content.content) {
-            var entryPath = subPackPath + contentEntry.path;
+        for (var contentEntry : content.content()) {
+            var entryPath = subPackPath + contentEntry.path();
             var zipEntry = inputZip.getEntry(entryPath);
             if (zipEntry == null) {
                 err("Zip entry not exists: " + entryPath);
@@ -240,7 +239,7 @@ public class EncryptMyPack {
             zos.putNextEntry((ZipEntry) zipEntry.clone());
             var bytes = inputZip.getInputStream(zipEntry).readAllBytes();
             log("Decrypting sub pack file: " + entryPath);
-            decryptFile(zos, bytes, contentEntry.key);
+            decryptFile(zos, bytes, contentEntry.key());
             zos.closeEntry();
         }
     }
